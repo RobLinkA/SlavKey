@@ -448,34 +448,36 @@
             const inputElem = event.target;
             const cursorPosition = inputElem.selectionStart;
             const charBeforeCursor = inputElem.value[cursorPosition - 1];
+
+            // 如果输入的是空格，清空buffer并跳过处理
+            if (charBeforeCursor === ' ') {
+                buffer = '';
+                return;
+            }
+
             buffer += isShiftPressed ? charBeforeCursor.toUpperCase() : charBeforeCursor.toLowerCase();
 
             if (buffer.length > 2) {
                 buffer = buffer.slice(-2);
             }
 
-            // 检查单个字符的映射
-            if (buffer.length === 1 && mapping[buffer]) {
-                replaceChars(inputElem, cursorPosition, buffer, unicodeToChar(mapping[buffer]));
-                buffer = '';
-            }
             // 检查两字符组合的映射
-            else if (buffer.length === 2 && mapping[buffer]) {
+            if (buffer.length === 2 && mapping[buffer]) {
                 replaceChars(inputElem, cursorPosition, buffer, unicodeToChar(mapping[buffer]));
-                buffer = '';
+                buffer = ''; // 清空buffer
+            }
+            // 检查单个字符的映射
+            else {
+                let lastChar = buffer.slice(-1);
+                if (mapping[lastChar]) {
+                    replaceChars(inputElem, cursorPosition, lastChar, unicodeToChar(mapping[lastChar]));
+                }
             }
         });
 
-        //处理用户输入的字符映射
+        // 替换字符并更新光标位置的函数
         function replaceChars(inputElem, cursorPosition, buffer, mappedChar) {
             const startPos = cursorPosition - buffer.length;
-            inputElem.value = inputElem.value.substring(0, startPos) + mappedChar + inputElem.value.substring(cursorPosition);
-            inputElem.setSelectionRange(startPos + mappedChar.length, startPos + mappedChar.length);
-        }
-
-        // 替换字符并更新光标位置的函数
-        function replaceChars(inputElem, cursorPosition, combo, mappedChar) {
-            const startPos = cursorPosition - combo.length;
             const endPos = startPos + mappedChar.length;
 
             inputElem.value = inputElem.value.substring(0, startPos) + mappedChar + inputElem.value.substring(cursorPosition);
