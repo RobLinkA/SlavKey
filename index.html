@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SlavKey - Виртуальная Клавиатура Церковнославянского Языка</title>
+    <style>
+        body {
+            font-family: 'Arial Unicode MS', 'Ponomar Unicode', 'Ponomar Unicode TT', 'Acathist', 'Triodion Unicode', 'Menaion Unicode', 'Menaion Unicode TT', 'Shafarik', 'Fedorovsk Unicode', 'Fedorovsk Unicode TT', 'Monomakh Unicode', 'Monomakh Unicode TT', 'Vilnius', BukyVede, 'Kliment Std', 'RomanCyrillic Std', 'Monomachus', 'Old Standard', 'Old Standard TT', Dilyana, Menaion, 'Menaion Medieval', Lazov, Code2000, 'DejaVu Sans', 'DejaVu Serif', Code2001, 'FreeSerif', 'TITUS Cyberbit Basic', 'Charis SIL', 'Doulos SIL', 'Chrysanthi Unicode', 'Bitstream Cyberbit', 'Bitstream CyberBase', Thryomanes, 'Lucida Grande', 'FreeSans', 'Microsoft Sans Serif', 'Lucida Sans Unicode';
+            background-color: #e0e0e0;
+            text-align: center;
+        }
+
+        #input {
+            width: 90%;
+            max-width: 1440px;
+            min-height: 240px;
+            padding: 15px;
+            font-size: 1.5em;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        textarea#input {
+            font-family: Arial;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px 20px 25px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .keyboard {
+            text-align: center;
+        }
+
+        .key {
+            display: inline-block;
+            width: 40px;
+            height: 52px;
+            margin: 5px;
+            padding: 5px;
+            background-color: #f2f2f2;
+            border: 1px solid #dcdcdc;
+            border-radius: 4px;
+            cursor: pointer;
+            vertical-align: top;
+            transition: background-color 0.3s ease;
+        }
+
+        .key:hover {
+            background-color: #e9e9e9;
+        }
+
+        .key:hover .tooltip {
+            display: block;
+        }
+
+        .key-label {
+            display: block;
+            font-size: .9em;
+            color: #333;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+        }
+
+        .key-letter {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #555;
+        }
+
+        .btn {
+            width: 24px;
+            height: 24px;
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #555;
+        }
+
+        .tooltip {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            border: 1px solid #c0c0c0;
+            padding: 5px;
+            z-index: 1000;
+        }
+
+        span.tooltip {
+            font-size: 0.8em;
+            font-weight: normal;
+        }
+
+        a {
+           color: #333;
+           font-weight: 700;
+        }
+    </style>
+</head>
+
+<body onload="document.getElementById('input').focus();">
+
+    <h1>Виртуальная Клавиатура Церковнославянского Языка</h1>
+
+    <textarea id="input" placeholder="Введите здесь текст, и он преобразуется в церковнославянские буквы."></textarea>
+    <button id="copyButton">Копировать</button>
+    <button id="clearButton" onclick="clearInput()">Очистить</button>
+    <button id="undoButton" onclick="undoAction()">Отменить</button>
+
+    <div class="keyboard">
+        <!-- 第一排按键 -->
+        <div class="key-row">
+            <div class="key btn"><span class="key-letter" data-char="0301"></span><span class="tooltip">Оксия (острое ударение)</span></div>
+            <div class="key btn"><span class="key-letter" data-char="0300"></span><span class="tooltip">Вария (тяжелое ударение)</span></div>
+            <div class="key btn"><span class="key-letter" data-char="0311"></span><span class="tooltip">Камора или переспомен (облегченное ударение)</span></div>
+            <div class="key btn"><span class="key-letter" data-char="0486"></span><span class="tooltip">Звательцо или псили (простое придыхание)</span></div>
+            <div class="key btn"><span class="key-letter" data-char="0485"></span><span class="tooltip">Дасия (густое придыхание)</span></div>
+            <div class="key btn"><span class="key-letter" data-combo-char="0486 0301"></span></span><span class="tooltip">ИСО (придыхание + оксия). Два знака набираются в тексте одной клавишей раскл. «Церквнославянский»</span></div>
+            <div class="key btn"><span class="key-letter" data-combo-char="0486 0300"></span></span><span class="tooltip">Апостроф (придыхание + вария). Набор такой же.</span></div>
+            <div class="key btn"><span class="key-letter" data-char="030F"></span><span class="tooltip">Смычец или кендема исп. для буквы ѵ.̏</span></div>
+            <div class="key btn"><span class="key-letter" data-char="A66F"></span><span class="tooltip">Взмет</span></div>
+            <div class="key btn"><span class="key-letter" data-char="A67E"></span><span class="tooltip">Кавыка для маркировки слова в его начале или конце (знак с местом в строке)</span></div>
+            <div class="key btn"><span class="key-letter" data-char="A67C"></span><span class="tooltip">Кавыка для маркировки слова в его средине (диакритический знак над буквой)</span></div>
+            <div class="key btn"><span class="key-letter" data-char="0306"></span><span class="tooltip">Краткая для буквы «й»</span></div>
+            <div class="key btn"><span class="key-letter" data-char="0308"></span><span class="tooltip">Две точки над буквой «ӏ̈»</span></div>
+            <div class="key btn"><span class="key-letter" data-char="0484"></span><span class="tooltip">Знак палатилизации (смягчения)</span></div>
+            <div class="key btn"><span class="key-letter" data-char="A67D"></span><span class="tooltip">Паерок (замещение ъ над буквой, без места в строке)</span></div>
+            <div class="key btn"><span class="key-letter" data-char="A67F"></span><span class="tooltip">Паерок (замещение ъ, как маркировка вместо буквы ъ с местом в строке)</span></div>
+            <div class="key btn"><span class="key-letter" data-char="0483"></span><span class="tooltip">Простое титло</span></div>
+            <div class="key btn"><span class="key-letter" data-char="0487"></span><span class="tooltip">Покрытие для буквенных титлов</span></div>
+            <div class="key btn"><span class="key-letter" data-char="2DE2"></span><span class="tooltip">г</span></div>
+            <div class="key btn"><span class="key-letter" data-char="2DE3"></span><span class="tooltip">д</span></div>
+            <div class="key btn"><span class="key-letter" data-char="2DEA"></span><span class="tooltip">о</span></div>
+            <div class="key btn"><span class="key-letter" data-char="2DEC"></span><span class="tooltip">р</span></div>
+            <div class="key btn"><span class="key-letter" data-char="2DED"></span><span class="tooltip">с</span></div>
+            <div class="key btn"><span class="key-letter" data-char="2DF1"></span><span class="tooltip">ч</span></div>
+            <div class="key btn"><span class="key-letter" data-char="2DEF"></span><span class="tooltip">х</span></div>
+            <div class="key btn"><span class="key-letter" data-char="2DE5"></span><span class="tooltip">з</span></div>
+            <!-- <div class="key btn"><span class="key-letter" data-char="005B"></span></div>
+            <div class="key btn"><span class="key-letter" data-char="005D"></span></div> -->
+        </div>
+        <!-- 第二排按键... -->
+        <div class="key-row">
+            <div class="key"><span class="key-label">q</span><span class="key-letter" data-combo-char="0438 0306"></span></div>
+            <div class="key"><span class="key-label">w</span><span class="key-letter" data-char="0446"></span><span class="tooltip">900</span></div>
+            <div class="key"><span class="key-label">e</span><span class="key-letter" data-char="0443"></span><span class="tooltip">400</span></div>
+            <div class="key"><span class="key-label">e1</span><span class="key-letter" data-char="0479"></span></div>
+            <div class="key"><span class="key-label">e2</span><span class="key-letter" data-char="A64B"></span></div>
+            <div class="key"><span class="key-label">e3</span><span class="key-letter" data-char="046B"></span></div>
+            <div class="key"><span class="key-label">r</span><span class="key-letter" data-char="043A"></span><span class="tooltip">20</span></div>
+            <div class="key"><span class="key-label">r1</span><span class="key-letter" data-char="046F"></span><span class="tooltip">60</span></div>
+            <div class="key"><span class="key-label">t</span><span class="key-letter" data-char="0435"></span><span class="tooltip">5</span></div>
+            <div class="key"><span class="key-label">t1</span><span class="key-letter" data-char="0454"></span></div>
+            <div class="key"><span class="key-label">y</span><span class="key-letter" data-char="043D"></span><span class="tooltip">50</span></div>
+            <div class="key"><span class="key-label">u</span><span class="key-letter" data-char="0433"></span><span class="tooltip">3</span></div>
+            <div class="key"><span class="key-label">i</span><span class="key-letter" data-char="0448"></span></div>
+            <div class="key"><span class="key-label">o</span><span class="key-letter" data-char="0449"></span></div>
+            <div class="key"><span class="key-label">p</span><span class="key-letter" data-char="0437"></span><span class="tooltip">7</span></div>
+            <div class="key"><span class="key-label">[</span><span class="key-letter" data-char="0445"></span><span class="tooltip">600</span></div>
+            <div class="key"><span class="key-label">]</span><span class="key-letter" data-char="044A"></span></div>
+        </div>
+        <!-- 第三排按键... -->
+        <div class="key-row">
+            <div class="key"><span class="key-label">a</span><span class="key-letter" data-char="0444"></span><span class="tooltip">500</span></div>
+            <div class="key"><span class="key-label">a1</span><span class="key-letter" data-char="0473"></span><span class="tooltip">9</span></div>
+            <div class="key"><span class="key-label">s</span><span class="key-letter" data-char="044B"></span></div>
+            <div class="key"><span class="key-label">s1</span><span class="key-letter" data-char="A651"></span></div>
+            <div class="key"><span class="key-label">d</span><span class="key-letter" data-char="0432"></span><span class="tooltip">2</span></div>
+            <div class="key"><span class="key-label">f</span><span class="key-letter" data-char="0430"></span><span class="tooltip">1</span></div>
+            <div class="key"><span class="key-label">f1</span><span class="key-letter" data-char="A657"></span></div>
+            <div class="key"><span class="key-label">g</span><span class="key-letter" data-char="043F"></span><span class="tooltip">80</span></div>
+            <div class="key"><span class="key-label">g1</span><span class="key-letter" data-char="0471"></span><span class="tooltip">700</span></div>
+            <div class="key"><span class="key-label">h</span><span class="key-letter" data-char="0440"></span><span class="tooltip">100</span></div>
+            <div class="key"><span class="key-label">j</span><span class="key-letter" data-char="043E"></span></div>
+            <div class="key"><span class="key-label">j1</span><span class="key-letter" data-char="047B"></span><span class="tooltip">70</span></div>
+            <div class="key"><span class="key-label">j2</span><span class="key-letter" data-char="0461"></span></div>
+            <div class="key"><span class="key-label">j3</span><span class="key-letter" data-char="047D"></span></div>
+            <div class="key"><span class="key-label">j4</span><span class="key-letter" data-char="047F"></span><span class="tooltip">800</span></div>
+            <div class="key"><span class="key-label">k</span><span class="key-letter" data-char="043B"></span><span class="tooltip">30</span></div>
+            <div class="key"><span class="key-label">l</span><span class="key-letter" data-char="0434"></span><span class="tooltip">4</span></div>
+            <div class="key"><span class="key-label">l1</span><span class="key-letter" data-char="0455"></span><span class="tooltip">6</span></div>
+            <div class="key"><span class="key-label">;</span><span class="key-letter" data-char="0436"></span></div>
+        </div>
+        <!-- 第四排按键... -->
+        <div class="key-row">
+            <div class="key"><span class="key-label">z</span><span class="key-letter" data-char="0467"></span></div>
+            <div class="key"><span class="key-label">z1</span><span class="key-letter" data-char="0469"></span></div>
+            <div class="key"><span class="key-label">x</span><span class="key-letter" data-char="0447"></span><span class="tooltip">90</span></div>
+            <div class="key"><span class="key-label">c</span><span class="key-letter" data-char="0441"></span><span class="tooltip">200</span></div>
+            <div class="key"><span class="key-label">c1</span><span class="key-letter" data-char="045B"></span></div>
+            <div class="key"><span class="key-label">v</span><span class="key-letter" data-char="043C"></span><span class="tooltip">40</span></div>
+            <div class="key"><span class="key-label">b</span><span class="key-letter" data-char="0438"></span><span class="tooltip">8</span></div>
+            <div class="key"><span class="key-label">b1</span><span class="key-letter" data-combo-char="04CF 0308"></span><span class="tooltip">10</span></div>
+            <div class="key"><span class="key-label">b2</span><span class="key-letter" data-char="0475"></span></div>
+            <div class="key"><span class="key-label">b3</span><span class="key-letter" data-char="0463"></span></div>
+            <div class="key"><span class="key-label">n</span><span class="key-letter" data-char="0442"></span><span class="tooltip">300</span></div>
+            <div class="key"><span class="key-label">m</span><span class="key-letter" data-char="044C"></span></div>
+            <div class="key"><span class="key-label">,</span><span class="key-letter" data-char="0431"></span></div>
+            <div class="key"><span class="key-label">.</span><span class="key-letter" data-char="044E"></span></div>
+            <div class="key"><span class="key-label">.1</span><span class="key-letter" data-char="0465"></span></div>
+        </div>
+        <!-- 第五排按键... -->
+        <div class="key-row">
+            <div class="key"><span class="key-label">?</span><span class="key-letter" data-char="002C"></span><span class="tooltip">Запятая</span></div>
+            <div class="key"><span class="key-label">/</span><span class="key-letter" data-char="002E"></span><span class="tooltip">Точка (малая точка)</span></div>
+            <div class="key"><span class="key-label">`</span><span class="key-letter" data-char="00B7"></span><span class="tooltip">Средняя точка</span></div>
+            <div class="key"><span class="key-label">!</span><span class="key-letter" data-char="0021"></span><span class="tooltip">Удивительная</span></div>
+            <div class="key"><span class="key-label">$</span><span class="key-letter" data-char="037E"></span><span class="tooltip">Вопросительная</span></div>
+            <div class="key"><span class="key-label">^</span><span class="key-letter" data-char="003A"></span><span class="tooltip">Двоеточие</span></div>
+            <div class="key"><span class="key-label">*</span><span class="key-letter" data-char="A673"></span><span class="tooltip">Славянская звездочка</span></div>
+            <div class="key"><span class="key-label">(</span><span class="key-letter" data-char="0028"></span></div>
+            <div class="key"><span class="key-label">)</span><span class="key-letter" data-char="0029"></span></div>
+            <div class="key"><span class="key-label">-</span><span class="key-letter" data-char="002D"></span><span class="tooltip">Дефис</span></div>
+            <div class="key"><span class="key-label">+</span><span class="key-letter" data-char="2626"></span><span class="tooltip">Православный крест</span></div>
+            <div class="key"><span class="key-label">=</span><span class="key-letter" data-char="0482"></span><span class="tooltip">Одна тысяча</span></div>
+            <div class="key"><span class="key-label">|</span><span class="key-letter" data-char="002F"></span><span class="tooltip">Косая черта</span></div>
+        </div>
+    </div>
+
+    <footer style="position: fixed; bottom: 0; width: 100%; text-align: center; padding: 10px 0; color: #555;">
+        <p>В память о профессоре <a href="https://sfl.pku.edu.cn/xyxw/123297.htm" target="blank">Цзо Шаосине</a> из Института Иностранных Языков Пекинского Университета.</p>
+    </footer>
+
+    <script>
+        // 映射规则
+        const mapping = {
+            'Q': '0418 0306',
+            'q': '0438 0306',
+            'W': '0426',
+            'w': '0446',
+            'E': '0423',
+            'e': '0443',
+            'E1': '0478',
+            'e1': '0479',
+            'E2': 'A64A',
+            'e2': 'A64B',
+            'E3': '046A',
+            'e3': '046B',
+            'R': '041A',
+            'r': '043A',
+            'R1': '046E',
+            'r1': '046F',
+            'T': '0415',
+            't': '0435',
+            'T1': '0404',
+            't1': '0454',
+            'Y': '041D',
+            'y': '043D',
+            'U': '0413',
+            'u': '0433',
+            'I': '0428',
+            'i': '0448',
+            'O': '0429',
+            'o': '0449',
+            'P': '0417',
+            'p': '0437',
+            'A': '0424',
+            'a': '0444',
+            'A1': '0472',
+            'a1': '0473',
+            'S': '042B',
+            's': '044B',
+            'S1': 'A650',
+            's1': 'A651',
+            'D': '0412',
+            'd': '0432',
+            'F': '0410',
+            'f': '0430',
+            'F1': 'A656',
+            'f1': 'A657',
+            'G': '041F',
+            'g': '043F',
+            'G1': '0470',
+            'g1': '0471',
+            'H': '0420',
+            'h': '0440',
+            'J': '041E',
+            'j': '043E',
+            'J1': '047A',
+            'j1': '047B',
+            'J2': '0460',
+            'j2': '0461',
+            'J3': '047C',
+            'j3': '047D',
+            'J4': '047E',
+            'j4': '047F',
+            'K': '041B',
+            'k': '043B',
+            'L': '0414',
+            'l': '0434',
+            'L1': '0405',
+            'l1': '0455',
+            ':': '0416',
+            ';': '0436',
+            'Z': '0466',
+            'z': '0467',
+            'Z1': '0467',
+            'z1': '0469',
+            'X': '0427',
+            'x': '0447',
+            'C': '0421',
+            'c': '0441',
+            'C1': '040B',
+            'c1': '045B',
+            'V': '041C',
+            'v': '043C',
+            'B': '0418',
+            'b': '0438',
+            'B1': '04C0 0308',
+            'b1': '04CF 0308',
+            'B2': '0474',
+            'b2': '0475',
+            'B3': '0462',
+            'b3': '0463',
+            'N': '0422',
+            'n': '0442',
+            'M': '042C',
+            'm': '044C',
+            '"': '0411',
+            '<': '0411',
+            ',': '0431',
+            '>': '042E',
+            '>1': '0464',
+            '.': '044E',
+            '.1': '0465',
+            '?': '002C',
+            '/': '002E',
+            '`': '00B7',
+            '!': '0021',
+            '$': '037E',
+            '^': '003A',
+            '*': 'A673',
+            '(': '0028',
+            ')': '0029',
+            '-': '002D',
+            '+': '2626',
+            '=': '0482',
+            '|': '002F'
+        };
+
+        // 全局变量用于跟踪Shift键是否被按下
+        let isShiftPressed = false;
+
+        // 监听键盘按下事件
+        window.addEventListener('keydown', function(event) {
+            if (event.key === 'Shift') {
+                isShiftPressed = true;
+            }
+        });
+
+        // 监听键盘释放事件
+        window.addEventListener('keyup', function(event) {
+            if (event.key === 'Shift') {
+                isShiftPressed = false;
+            }
+        });
+
+        // DOMContentLoaded事件处理器
+        window.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.key').forEach(key => {
+                const keyLetterSpan = key.querySelector('.key-letter');
+                const charCode = keyLetterSpan ? keyLetterSpan.getAttribute('data-char') : null;
+                const comboCharCode = keyLetterSpan ? keyLetterSpan.getAttribute('data-combo-char') : null;
+
+                // 设置按钮上的显示文本
+                if (comboCharCode) {
+                    const comboCharText = comboCharCode.split(' ').map(uc => unicodeToChar(uc)).join('');
+                    keyLetterSpan.textContent = comboCharText;
+                } else if (charCode) {
+                    const charText = unicodeToChar(charCode);
+                    keyLetterSpan.textContent = charText;
+                }
+
+                // 为按钮添加点击事件监听器
+                key.addEventListener('click', function() {
+                    let unicode = comboCharCode ? comboCharCode : charCode;
+
+                    // 处理Shift键状态
+                    if (isShiftPressed && unicode) {
+                        // 转换为大写对应的Unicode字符
+                        unicode = unicode.split(' ').map(c => {
+                            let upperCaseChar = unicodeToChar(c).toUpperCase();
+                            return charToUnicode(upperCaseChar);
+                        }).join(' ');
+                    }
+
+                    // 将Unicode字符添加到输入框
+                    if (unicode) {
+                        addToInput(unicode);
+                    }
+                });
+            });
+        });
+
+        // Unicode编码转字符的函数
+        function unicodeToChar(unicode) {
+            if (!unicode || unicode.split(' ').some(code => isNaN(parseInt(code, 16)))) {
+                console.error('Invalid unicode input:', unicode);
+                return ''; // 返回空字符串以避免错误
+            }
+            return String.fromCodePoint(...unicode.split(' ').map(u => parseInt(u, 16)));
+        }
+
+        // 字符转Unicode编码的函数
+        function charToUnicode(char) {
+            return char.codePointAt(0).toString(16).toUpperCase();
+        }
+
+        // 将字符添加到输入框的函数
+        function addToInput(unicode) {
+            console.log('unicode received in addToInput:', unicode);
+
+            const inputElem = document.getElementById('input');
+            const cursorPosition = inputElem.selectionStart;
+            let charToInsert = unicodeToChar(unicode);
+
+            // 将字符插入到输入框并更新光标位置
+            inputElem.value = inputElem.value.substring(0, cursorPosition) +
+                charToInsert +
+                inputElem.value.substring(cursorPosition);
+            inputElem.setSelectionRange(cursorPosition + charToInsert.length, cursorPosition + charToInsert.length);
+            inputElem.focus();
+        }
+
+        // 用于存储最近输入的字符
+        let buffer = '';
+
+        // 输入框的输入事件处理器
+        document.getElementById('input').addEventListener('input', function(event) {
+            const inputElem = event.target;
+            const cursorPosition = inputElem.selectionStart;
+            const charBeforeCursor = inputElem.value[cursorPosition - 1];
+            buffer += isShiftPressed ? charBeforeCursor.toUpperCase() : charBeforeCursor.toLowerCase();
+
+            if (buffer.length > 2) {
+                buffer = buffer.slice(-2);
+            }
+
+            // 检查单个字符的映射
+            if (buffer.length === 1 && mapping[buffer]) {
+                replaceChars(inputElem, cursorPosition, buffer, unicodeToChar(mapping[buffer]));
+                buffer = '';
+            }
+            // 检查两字符组合的映射
+            else if (buffer.length === 2 && mapping[buffer]) {
+                replaceChars(inputElem, cursorPosition, buffer, unicodeToChar(mapping[buffer]));
+                buffer = '';
+            }
+        });
+
+        //处理用户输入的字符映射
+        function replaceChars(inputElem, cursorPosition, buffer, mappedChar) {
+            const startPos = cursorPosition - buffer.length;
+            inputElem.value = inputElem.value.substring(0, startPos) + mappedChar + inputElem.value.substring(cursorPosition);
+            inputElem.setSelectionRange(startPos + mappedChar.length, startPos + mappedChar.length);
+        }
+
+        // 替换字符并更新光标位置的函数
+        function replaceChars(inputElem, cursorPosition, combo, mappedChar) {
+            const startPos = cursorPosition - combo.length;
+            const endPos = startPos + mappedChar.length;
+
+            inputElem.value = inputElem.value.substring(0, startPos) + mappedChar + inputElem.value.substring(cursorPosition);
+            inputElem.setSelectionRange(endPos, endPos);
+        }
+
+        // 复制按钮的事件处理器
+        document.getElementById('copyButton').addEventListener('click', () => {
+            const inputElem = document.getElementById('input');
+            inputElem.select();
+            document.execCommand('copy');
+            alert('Скопировано!');
+        });
+
+        // 清空输入框的函数
+        function clearInput() {
+            document.getElementById('input').value = '';
+            document.getElementById('input').focus();
+            buffer = ''; // 清空buffer
+        }
+
+        // 输入历史记录和撤销功能
+        let history = [];
+        let currentIndex = -1;
+
+        // 更新输入历史的函数
+        function updateHistory() {
+            const inputElem = document.getElementById('input');
+            if (currentIndex < history.length - 1) {
+                history = history.slice(0, currentIndex + 1);
+            }
+            history.push(inputElem.value);
+            currentIndex++;
+        }
+
+        // 执行撤销操作的函数
+        function undoAction() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                document.getElementById('input').value = history[currentIndex];
+            }
+        }
+
+        // 监听输入框的输入事件以更新输入历史
+        document.getElementById('input').addEventListener('input', updateHistory);
+    </script>
+
+</body>
+
+</html>
